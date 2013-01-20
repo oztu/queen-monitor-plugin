@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en" ng-app="monitor">
+<head>
+  <meta charset="utf-8">
+  <title>Queen Monitor</title>
+  <link href="http://fonts.googleapis.com/css?family=Sanchez" rel="stylesheet" type="text/css">
+  <link href='http://fonts.googleapis.com/css?family=PT+Sans' rel='stylesheet' type='text/css'>
+  <link rel="shortcut icon" href="favicon.png" />
+  <link rel="stylesheet" href="queen-monitor.css" type="text/css">
+</head>
+<body>
+  <h1 ng-controller="status">
+    <span id="Title">Queen Monitor</span><span id="StatusIndicator" class="{{class}}">&nbsp;</span><span id="Status">{{status}}</span>
+  </h1>
+  <div ng-controller="hosts">
+    <div class="host-wrapper" ng-repeat="host in hosts">
+      <div ng-class="host.hostClass">
+        <div class="name" title="{{host.name}}">{{host.family}} {{host.majorVersion}}</div>
+        <div class="platform">{{platform}}</div>
+        <div class="details">
+          <div class="icon">
+            <img ng-src="image/{{host.iconName}}.png" />
+          </div>
+          <div class="workerCount">{{host.workerCount}}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="queen-monitor.js"></script>
+  <script>
+    var config = {};
+
+    if(typeof console !== "undefined"){
+      config.logger = function(message){
+        console.log(message);
+      };
+    }
+		
+    var monitor = QueenMonitor("//" + window.location.host + "/monitor", config);
+
+    var browserIconNames = {
+      "Chrome": "chrome",
+      "Opera": "opera",
+      "Firefox": "firefox",
+      "Safari": "safari",
+      "IE": {
+        "6": "ie6",
+        "7": "ie6",
+        "8": "ie8-700",
+        "9": "ie-256",
+        "default": "ie-256"
+      },
+      "default": "opera"
+    };
+
+    function getIconName(browserAttributes){
+      var versionedIconName,
+          iconName = browserIconNames[browserAttributes.family];
+      if(!iconName) return browserIconNames["default"];
+      if(typeof iconName === "string") return iconName;
+      
+      versionedIconName = iconName[browserAttributes.version.major];
+      if(!versionedIconName) return iconName["default"];
+      return versionedIconName;
+    }
+
+    var module = angular.module('monitor', []);
+    module.controller('hosts', function($scope){
+      monitor.on('update', function(){
+        $scope.$apply(function(){
+          var hosts = [],
+              providers = monitor.workerProviders,
+              provider, providerId, hostClass;
+            
+          for(providerId in providers){
+            if(providers.hasOwnProperty(providerId)){
+              provider = providers[providerId];
+
+              hostClass = "host";
+              if(!provider.isResponsive) hostClass = "host host-unresponsive";
+              else if(!provider.isAvailable) hostClass = "host host-unavailable";
+             
+              hosts.push({
+                name: provider.attributes.name || "Unknown",
+                platform: provider.attributes.os || "",
+                family: provider.attributes.family || "",
+                majorVersion: provider.attributes.version.major || 0,
+                workerCount: provider.workerCount,
+                iconName: getIconName(provider.attributes),
+                hostClass: hostClass      
+              });
+            }
+          }
+          
+          $scope.hosts = hosts;
+        });
+      });
+    });
+
+    module.controller('status', function($scope){
+      $scope.status = "Disconnected";
+      $scope.class = "disconnected";
+
+      monitor.on('connect', function(){
+        $scope.$apply(function(){
+          $scope.status = "Connected";
+          $scope.class = "connected";
+        });
+      });
+      monitor.on('disconnect', function(){
+        $scope.$apply(function(){
+          $scope.status = "Disconnected";
+          $scope.class = "disconnected";
+        });
+      });
+    });
+
+	</script>
+
+</body>
+</html>

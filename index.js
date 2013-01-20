@@ -1,4 +1,4 @@
-exports.createManager = require('./lib/manager.js');
-exports.createSelenium = require('./lib/selenium.js');
-exports.createBrowserstack = require('./lib/browserstack.js');
-exports.createSauce = require('./lib/sauce.js');
+var path = require('path');
+
+var api = module.exports = require('./lib/server/monitor.js');
+api.WEB_ROOT = path.resolve(path.dirname(module.filename), './static');
