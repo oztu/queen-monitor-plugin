@@ -3,20 +3,18 @@
 <head>
   <meta charset="utf-8">
   <title>Queen Monitor</title>
-  <link href="http://fonts.googleapis.com/css?family=Sanchez" rel="stylesheet" type="text/css">
-  <link href='http://fonts.googleapis.com/css?family=PT+Sans' rel='stylesheet' type='text/css'>
   <link rel="shortcut icon" href="favicon.png" />
   <link rel="stylesheet" href="queen-monitor.css" type="text/css">
 </head>
 <body>
   <h1 ng-controller="status">
-    <span id="Title">Queen Monitor</span><span id="StatusIndicator" class="{{class}}">&nbsp;</span><span id="Status">{{status}}</span>
+    <img id="logo" src="favicon.png" /> Monitoring {{status}}
   </h1>
   <div ng-controller="hosts">
     <div class="host-wrapper" ng-repeat="host in hosts">
       <div ng-class="host.hostClass">
         <div class="name" title="{{host.name}}">{{host.family}} {{host.majorVersion}}</div>
-        <div class="platform">{{platform}}</div>
+        <div class="platform">{{host.platform}}</div>
         <div class="details">
           <div class="icon">
             <img ng-src="image/{{host.iconName}}.png" />
@@ -51,6 +49,9 @@
         "9": "ie-256",
         "default": "ie-256"
       },
+      "iPad": "ipad",
+      "iPhone": "iphone",
+      "Android": "android",
       "default": "opera"
     };
 
@@ -61,12 +62,23 @@
       if(typeof iconName === "string") return iconName;
       
       versionedIconName = iconName[browserAttributes.version.major];
-      if(!versionedIconName) return iconName["default"];
+      if(!versionedIconName){
+        if(browserAttributes.platform === "Android"){
+          return iconName["Android"];
+        }
+        return iconName["default"];
+      } 
       return versionedIconName;
     }
 
     var module = angular.module('monitor', []);
     module.controller('hosts', function($scope){
+      monitor.on('disconnect', function(){
+        $scope.$apply(function(){
+          $scope.hosts = [];
+        });
+      });
+
       monitor.on('update', function(){
         $scope.$apply(function(){
           var hosts = [],
@@ -80,7 +92,7 @@
               hostClass = "host";
               if(!provider.isResponsive) hostClass = "host host-unresponsive";
               else if(!provider.isAvailable) hostClass = "host host-unavailable";
-             
+
               hosts.push({
                 name: provider.attributes.name || "Unknown",
                 platform: provider.attributes.os || "",
@@ -92,26 +104,23 @@
               });
             }
           }
-          
+          document.title = "(" + hosts.length + ") Queen Monitor";
           $scope.hosts = hosts;
         });
       });
     });
 
     module.controller('status', function($scope){
-      $scope.status = "Disconnected";
-      $scope.class = "disconnected";
+      $scope.status = "disconnected";
 
       monitor.on('connect', function(){
         $scope.$apply(function(){
-          $scope.status = "Connected";
-          $scope.class = "connected";
+          $scope.status = window.location.host;
         });
       });
       monitor.on('disconnect', function(){
         $scope.$apply(function(){
-          $scope.status = "Disconnected";
-          $scope.class = "disconnected";
+          $scope.status = "disconnected";
         });
       });
     });

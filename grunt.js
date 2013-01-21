@@ -9,8 +9,9 @@ module.exports = function(grunt) {
         src: 'lib/client/*.js'
       },
       src: ['lib/**/*.js'],
-      monitor: {
-        src: 'lib/client/**/*.js'
+      client: {
+        src: 'lib/client/**/*.js',
+        style: 'lib/client/style/**/*'
       },
       test: {
         src: ['test/**/*.js']
@@ -18,7 +19,7 @@ module.exports = function(grunt) {
       thirdParty: {
         src: ["./components/angular/angular.js"]
       },
-      styles: [ 
+      css: [ 
         './lib/client/style/external/**/*.css', 
         './lib/client/style/**/*.css', 
         './build/less.css'
@@ -60,14 +61,14 @@ module.exports = function(grunt) {
     },    
     lint: {
       server: '<config:files.server>',
-      client: '<config:files.client.src>'
+      client: './lib/client/*.js'
     },
     nodeunit: {
       server: ['./test/server/**/*.js']
     },
     watch: {
       monitor: {
-        files: '<config:files.monitor.src>',
+        files: ['<config:files.client.src>', '<config:files.client.style>'],
         tasks: 'build-dev'
       }
     },
@@ -80,7 +81,7 @@ module.exports = function(grunt) {
     },
     concat: {
       styles: {
-        src: ['<config:files.styles>'],
+        src: ['<config:files.css>'],
         dest: 'static/queen-monitor.css'
       }
     },    
@@ -134,7 +135,7 @@ module.exports = function(grunt) {
   grunt.registerTask('build-release', 'clean bower build min copy:dist');
 
   grunt.renameTask('test','nodeunit');
-  //grunt.registerTask('test', 'nodeunit');
+  grunt.registerTask('test', 'nodeunit');
 
   grunt.registerTask('default', 'clean bower build-dev');
 
